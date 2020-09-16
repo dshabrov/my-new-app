@@ -1,77 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
-
-//"https://api.exchangeratesapi.io/latest?base=USD&symbols=RUB"
-
-const fetchUtils = {
-  get: async (url, params) => {
-    try {
-      const response = await fetch(url, params);
-      if (response.status === 200) {
-        return response.json();
-      }
-      throw Error("Could not retreive the data");
-    } catch (err) {
-      return {};
-    }
-  },
-};
-
-const RateItem = (rateData) => {
-  return (
-    <div className="rate-item">
-      <span>{rateData.currency}</span>
-      <span>{rateData.rate}</span>
-    </div>
-  );
-};
-
-const CurrenciesSelect = ({ currencies = [], value, onChange }) => {
-  return (
-    <select value={value} onChange={onChange}>
-      {currencies.map((currency, idx) => (
-        <option key={idx} value={currency}>
-          {currency}
-        </option>
-      ))}
-    </select>
-  );
-};
-
-const getRates = (base, setData) => {};
+import { RatesList, CurrenciesSelect } from "./components";
+import useExchangeRateApi from "./hooks/useExchangeRateApi";
 
 function App() {
-  const [data, setData] = useState({});
-  const [base, setBase] = useState("USD");
-  const [error, setError] = useState("");
+  const {
+    baseCurrency,
+    rates,
+    currencies,
+    onBaseCurrencyChange,
+  } = useExchangeRateApi();
 
-  const onBaseChange = (event) => {
-    const baseValue = event.target.value;
-    setBase(baseValue.toUpperCase());
+  const [filter, setFilter] = useState("");
+  const onFilterChange = (event) => {
+    setFilter(event.target.value.toUpperCase());
   };
-
-  useEffect(() => {
-    console.log("did mount 1");
-  });
-
-  useEffect(() => {
-    if (base.length === 3) {
-      fetchUtils
-        .get(`https://api.exchangeratesapi.io/latest?base=${base}`) //&symbols=RUB
-        .then((data) => {
-          setData(data);
-        });
-    } else {
-      setData({});
-    }
-
-    console.log("did mount 2");
-  }, [base]);
-
-  const rates = data.rates;
-  const availableCurrensies = rates ? Object.keys(rates).sort() : [];
-
-  console.log("RENDER");
+  const filteredRates = rates.filter(
+    (rate) => rate.currency.indexOf(filter) !== -1
+  );
 
   return (
     <div className="App">
@@ -79,28 +25,20 @@ function App() {
         <header>Exchange Rates</header>
         <div className="filters-container">
           <label>Base Currency</label>
-          {/* <input value={base} type="text" onChange={onBaseChange} />
-          <input
-            type="date"
-            onChange={(event) => {
-              console.log(event.target.value);
-            }}
-          /> */}
           <CurrenciesSelect
-            currencies={availableCurrensies}
-            value={base}
-            onChange={onBaseChange}
+            currencies={currencies}
+            value={baseCurrency}
+            onChange={onBaseCurrencyChange}
+          />
+          <label>Filter</label>
+          <input
+            className="input-control filter-input"
+            type="text"
+            value={filter}
+            onChange={onFilterChange}
           />
         </div>
-        {rates ? (
-          <div className="rates-container">
-            {Object.keys(rates).map((currency, idx) => (
-              <RateItem key={idx} currency={currency} rate={rates[currency]} />
-            ))}
-          </div>
-        ) : (
-          <div>No data to display</div>
-        )}
+        <RatesList rates={filteredRates} />
       </div>
     </div>
   );

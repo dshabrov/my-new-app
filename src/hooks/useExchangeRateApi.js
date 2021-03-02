@@ -10,17 +10,19 @@ const useExchangeRateApi = () => {
   const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
-    console.log("get rates");
     setIsFetching(true);
+
     fetchUtils
       .get(`${API_URL}latest?base=${baseCurrency}`) //&symbols=RUB,USD,EUR,PLN
       .then((data) => {
         setIsFetching(false);
+    
         if (data.rates) {
           const rates = Object.keys(data.rates).map((currKey) => ({
             currency: currKey,
             rate: data.rates[currKey],
           }));
+    
           setRates(rates);
           setCurrencies(rates.map((rate) => rate.currency));
         }
